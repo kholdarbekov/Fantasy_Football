@@ -2,7 +2,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth import authenticate
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers, fields
-from ..models import User
+from ..models import User, Team, Player
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -69,3 +69,32 @@ class UserLoginSerializer(serializers.Serializer):
 
         attrs['user'] = user
         return attrs
+
+
+class PlayerSerializer(serializers.ModelSerializer):
+    age = serializers.IntegerField(read_only=True)
+    price = serializers.DecimalField(read_only=True, decimal_places=2, max_digits=12, default=0)
+    category = serializers.CharField(read_only=True, max_length=16)
+
+    class Meta:
+        model = Player
+        fields = ['first_name', 'last_name', 'age', 'price', 'country', 'category', 'id']
+
+
+class TeamSerializer(serializers.ModelSerializer):
+    value = serializers.DecimalField(read_only=True, decimal_places=2, min_value=0, max_digits=12)
+    budget = serializers.DecimalField(read_only=True, decimal_places=2, min_value=0, max_digits=12)
+    players = PlayerSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Team
+        fields = ['id', 'name', 'country', 'value', 'budget', 'players']
+
+
+class TeamUpdateSerializer(serializers.ModelSerializer):
+    value = serializers.DecimalField(read_only=True, decimal_places=2, min_value=0, max_digits=12)
+    budget = serializers.DecimalField(read_only=True, decimal_places=2, min_value=0, max_digits=12)
+
+    class Meta:
+        model = Team
+        fields = ['id', 'name', 'country', 'value', 'budget']
