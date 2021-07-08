@@ -2,7 +2,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth import authenticate
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers, fields
-from ..models import User, Team, Player
+from ..models import User, Team, Player, TransferList
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -98,3 +98,11 @@ class TeamUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Team
         fields = ['id', 'name', 'country', 'value', 'budget']
+
+
+class TransferListSerializer(serializers.ModelSerializer):
+    player = PlayerSerializer(many=False, read_only=True)
+
+    class Meta:
+        model = TransferList
+        fields = ['player', 'asking_price']

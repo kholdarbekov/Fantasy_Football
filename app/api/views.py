@@ -1,11 +1,12 @@
+from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import generics, status, views
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from ..models import User, Team, Player
+from ..models import User, Team, Player, TransferList
 from .serializers import UserSerializer, UserRegisterSerializer, UserLoginSerializer, TeamSerializer, \
-    TeamUpdateSerializer, PlayerSerializer
+    TeamUpdateSerializer, PlayerSerializer, TransferListSerializer
 
 
 class UsersListView(generics.ListAPIView):
@@ -93,3 +94,86 @@ class PlayerUpdateView(generics.UpdateAPIView):
         if player not in self.request.user.team.players.all():
             return None
         return player
+
+
+class SetPlayerToTransferList(views.APIView):
+    permission_classes = [IsAuthenticated, ]
+    http_method_names = ['post', ]
+
+    def post(self, request, *args, **kwargs):
+        error_message = list()
+        asking_price = -1
+        team = request.user.team
+        player = None
+
+        if not team:
+            error_message.append('User has no team')
+
+        # get input params
+        try:
+            player_id = request.data['player_id']
+            player = Player.objects.get(id=player_id, team=team)
+        except KeyError:
+            error_message.append('parameter player_id is not sent')
+        except ObjectDoesNotExist:
+            error_message.append('This player is not found in your team')
+
+        try:
+            asking_price = request.data['asking_price']
+        except KeyError:
+            error_message.append('parameter asking_price was not sent')
+
+        if error_message:
+            return Response(data={'error_message': error_message}, status=status.HTTP_400_BAD_REQUEST)
+
+        transfer_offer, created = TransferList.objects.get_or_create(player=player, asking_price=asking_price)
+        if created:
+            team.set_player_to_transfer_list(player)
+            return Response(status=status.HTTP_200_OK)
+        else:
+            error_message.append('This player is already in Transfer List')
+
+        return Response(data={'error_message': error_message}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class TransferListView(generics.ListAPIView):
+    serializer_class = TransferListSerializer
+    permission_classes = [IsAuthenticated, ]
+    queryset = TransferList.objects.all()
+
+
+class BuyTransferView(views.APIView):
+    permission_classes = [IsAuthenticated, ]
+    http_method_names = ['post', ]
+
+    def post(self, request, *args, **kwargs):
+        error_message = list()
+        player = None
+        buying_team = request.user.team
+
+        if not buying_team:
+            error_message.append('User has no team')
+
+        # get input params
+        try:
+            player_id = request.data['player_id']
+            player = Player.objects.get(id=player_id)
+        except KeyError:
+            error_message.append('parameter player_id was not sent')
+        except ObjectDoesNotExist:
+            error_message.append('Player not found')
+
+        if error_message:
+            return Response(data={'error_message': error_message}, status=status.HTTP_400_BAD_REQUEST)
+
+        transfer_offer = player.transfer_offer
+        if transfer_offer:
+            try:
+                transfer_offer.make_transfer(buying_team)
+                return Response(status=status.HTTP_200_OK)
+            except Exception as ex:
+                error_message.extend(ex.args)
+        else:
+            error_message.append('This player is not on Transfer list')
+
+        return Response(data={'error_message': error_message}, status=status.HTTP_400_BAD_REQUEST)

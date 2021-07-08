@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.translation import gettext, gettext_lazy as _
 from django.contrib.auth.admin import UserAdmin
-from .models import User, Team, Player
+from .models import User, Team, Player, TransferList, TransferHistory
 
 
 class CustomUserAdmin(UserAdmin):
@@ -36,6 +36,16 @@ class PlayerAdmin(admin.ModelAdmin):
     list_display = ('first_name', 'last_name', 'age', 'price', 'team')
 
 
+class TransferListAdmin(admin.ModelAdmin):
+    list_display = ('player', 'asking_price')
+
+
+class TransferHistoryAdmin(admin.ModelAdmin):
+    list_display = ('player', 'sell_price', 'sell_team', 'buy_team', 'time')
+
+
 admin.site.register(User, CustomUserAdmin)
 admin.site.register(Team, TeamAdmin)
 admin.site.register(Player, PlayerAdmin)
+admin.site.register(TransferList, TransferListAdmin)
+admin.site.register(TransferHistory, TransferHistoryAdmin)
