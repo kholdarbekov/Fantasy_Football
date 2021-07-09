@@ -7,19 +7,16 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from ..models import User, Team, Player, TransferList
 from .serializers import UserSerializer, UserRegisterSerializer, UserLoginSerializer, TeamSerializer, \
     TeamUpdateSerializer, PlayerSerializer, TransferListSerializer
+from .permissions import IsAdminRoleUser
 
 
 class UsersListView(generics.ListAPIView):
-    queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated, ]
-    http_method_names = ['post', ]
+    permission_classes = [IsAuthenticated, IsAdminRoleUser, ]
 
-    def post(self, request, *args, **kwargs):
-        users = User.objects.all()
-        users_serializer = self.get_serializer(users, many=True)
-
-        return Response(users_serializer.data)
+    def get_queryset(self):
+        users = User.objects.filter(role=User.USER)
+        return users
 
 
 class UserRegisterView(generics.CreateAPIView):
@@ -28,6 +25,7 @@ class UserRegisterView(generics.CreateAPIView):
     http_method_names = ['post', ]
 
     def post(self, request, *args, **kwargs):
+        # TODO: validate input params
         return super().post(request, *args, **kwargs)
 
     def create(self, request, *args, **kwargs):
@@ -41,6 +39,53 @@ class UserRegisterView(generics.CreateAPIView):
         Team.objects.generate_team(user)
 
         return Response({'token': token.key}, status=status.HTTP_201_CREATED, headers=headers)
+
+
+class UserUpdateView(generics.UpdateAPIView):
+    serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated, IsAdminRoleUser, ]
+
+    def update(self, request, *args, **kwargs):
+        try:
+            return super(UserUpdateView, self).update(request, *args, **kwargs)
+        except Exception as e:
+            return Response(data={'error_message': e.args}, status=status.HTTP_400_BAD_REQUEST)
+
+    def get_object(self):
+        email = self.request.data['email']
+        user = None
+        try:
+            user = User.objects.get(email=email)
+            if user.role == User.ADMIN:
+                raise Exception('Can not update Admin user')
+        except ObjectDoesNotExist as e:
+            e.args = ('User not found', )
+            raise
+
+        return user
+
+
+class UserDeleteView(generics.DestroyAPIView):
+    permission_classes = [IsAuthenticated, IsAdminRoleUser, ]
+
+    def delete(self, request, *args, **kwargs):
+        try:
+            return super(UserDeleteView, self).delete(request, *args, **kwargs)
+        except Exception as e:
+            return Response(data={'error_message': e.args}, status=status.HTTP_400_BAD_REQUEST)
+
+    def get_object(self):
+        email = self.request.data['email']
+        user = None
+        try:
+            user = User.objects.get(email=email)
+            if user.role == User.ADMIN:
+                raise Exception('Can not delete admin user')
+        except ObjectDoesNotExist as e:
+            e.args = ('User not found', )
+            raise
+
+        return user
 
 
 class UserLoginView(ObtainAuthToken):
@@ -59,6 +104,15 @@ class LogoutView(views.APIView):
         return Response(status=status.HTTP_200_OK)
 
 
+class TeamListView(generics.ListAPIView):
+    serializer_class = TeamUpdateSerializer
+    permission_classes = [IsAuthenticated, IsAdminRoleUser, ]
+
+    def get_queryset(self):
+        teams = Team.objects.all()
+        return teams
+
+
 class TeamDetailView(generics.RetrieveAPIView):
     serializer_class = TeamSerializer
     permission_classes = [IsAuthenticated, ]
@@ -71,13 +125,26 @@ class TeamDetailView(generics.RetrieveAPIView):
 class TeamUpdateView(generics.UpdateAPIView):
     serializer_class = TeamUpdateSerializer
     permission_classes = [IsAuthenticated, ]
-    http_method_names = ['post', ]
 
-    def post(self, request, *args, **kwargs):
-        return self.update(request, *args, **kwargs)
+    def update(self, request, *args, **kwargs):
+        try:
+            return super(TeamUpdateView, self).update(request, *args, **kwargs)
+        except Exception as e:
+            return Response(data={'error_message': e.args}, status=status.HTTP_400_BAD_REQUEST)
 
     def get_object(self):
-        team = self.request.user.team
+        team = None
+        if self.request.user.role == User.ADMIN:
+            team_id = self.request.data['id']
+            try:
+                team = Team.objects.get(id=team_id)
+            except ObjectDoesNotExist as e:
+                e.args = ('Team not found', )
+                raise
+        elif self.request.user.role == User.USER:
+            team = self.request.user.team
+            if not team:
+                raise Exception('User has no team')
         return team
 
 

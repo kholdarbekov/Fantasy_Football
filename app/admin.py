@@ -9,7 +9,7 @@ class CustomUserAdmin(UserAdmin):
     ordering = ('email', )
 
     fieldsets = (
-        (None, {'fields': ('email', 'password')}),
+        (None, {'fields': ('email', 'password', 'role')}),
         (_('Personal info'), {'fields': ('first_name', 'last_name')}),
         (_('Soccer'), {'fields': ('team', )}),
         (_('Permissions'), {

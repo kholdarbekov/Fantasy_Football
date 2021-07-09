@@ -25,6 +25,7 @@ class UserManager(BaseUserManager):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
         extra_fields.setdefault('is_active', True)
+        extra_fields.setdefault('role', User.ADMIN)
 
         if not extra_fields.get('is_staff'):
             raise ValueError(_('Superuser must have is_staff=True'))
@@ -34,9 +35,18 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractUser):
+    USER = 1
+    ADMIN = 2
+
+    ROLE_CHOICES = (
+        (USER, 'Ordinary User'),
+        (ADMIN, 'Admin User')
+    )
+
     username = None
     email = models.EmailField(_('email address'), unique=True)
-    team = models.OneToOneField('Team', on_delete=models.CASCADE, blank=True, null=True)
+    team = models.OneToOneField('Team', on_delete=models.CASCADE, related_name='owner', blank=True, null=True)
+    role = models.PositiveSmallIntegerField(choices=ROLE_CHOICES, default=ROLE_CHOICES[0][0])
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
