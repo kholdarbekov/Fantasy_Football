@@ -67,6 +67,7 @@ class UserUpdateView(generics.UpdateAPIView):
 
 class UserDeleteView(generics.DestroyAPIView):
     permission_classes = [IsAuthenticated, IsAdminRoleUser, ]
+    serializer_class = UserSerializer  # no need serializer, for swagger added
 
     def delete(self, request, *args, **kwargs):
         try:
