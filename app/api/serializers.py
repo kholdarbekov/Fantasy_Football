@@ -2,6 +2,8 @@ from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth import authenticate
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers, fields
+from rest_framework.exceptions import ValidationError
+
 from ..models import User, Team, Player, TransferList
 
 
@@ -32,7 +34,31 @@ class UserRegisterSerializer(serializers.ModelSerializer):
             role=User.USER
         )
         return user
+    '''
+    def is_valid(self, raise_exception=False):
+        assert hasattr(self, 'initial_data'), (
+            'Cannot call `.is_valid()` as no `data=` keyword argument was '
+            'passed when instantiating the serializer instance.'
+        )
 
+        if not hasattr(self, '_validated_data'):
+            try:
+                self._validated_data = self.run_validation(self.initial_data)
+            except ValidationError as exc:
+                self._validated_data = {}
+                self._errors = []
+                for arg in exc.args:
+                    for k, error_details in arg.items():
+                        for detail in error_details:
+                            self._errors.append(str(detail))
+            else:
+                self._errors = []
+
+        if self._errors and raise_exception:
+            raise Exception(self._errors)
+
+        return not bool(self._errors)
+    '''
     class Meta:
         model = User
         fields = ['email', 'password', 'first_name', 'last_name']
@@ -77,13 +103,27 @@ class UserLoginSerializer(serializers.Serializer):
 
 
 class PlayerSerializer(serializers.ModelSerializer):
-    age = serializers.IntegerField(read_only=True)
-    price = serializers.DecimalField(read_only=True, decimal_places=2, max_digits=12, default=0)
-    category = serializers.CharField(read_only=True, max_length=16)
+    price = serializers.DecimalField(decimal_places=2, max_digits=12, default=0)
 
     class Meta:
         model = Player
-        fields = ['first_name', 'last_name', 'age', 'price', 'country', 'category', 'id']
+        fields = ['id', 'first_name', 'last_name', 'age', 'price', 'country', 'category']
+
+
+class PlayerCreateSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(read_only=True)
+    price = serializers.DecimalField(decimal_places=2, max_digits=12, default=0)
+
+    class Meta:
+        model = Player
+        fields = ['id', 'first_name', 'last_name', 'age', 'price', 'country', 'category']
+
+
+class PlayerDeleteSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Player
+        fields = ['id', ]
 
 
 class TeamSerializer(serializers.ModelSerializer):
@@ -97,13 +137,28 @@ class TeamSerializer(serializers.ModelSerializer):
 
 
 class TeamUpdateSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(read_only=True)
     value = serializers.DecimalField(read_only=True, decimal_places=2, min_value=0, max_digits=12)
     budget = serializers.DecimalField(read_only=True, decimal_places=2, min_value=0, max_digits=12)
     owner = serializers.StringRelatedField(many=False, read_only=True)
 
+    def create(self, validated_data):
+        team = Team.objects.generate_team(
+            name=validated_data['name'],
+            country=validated_data['country']
+        )
+        return team
+
     class Meta:
         model = Team
         fields = ['id', 'name', 'country', 'value', 'budget', 'owner']
+
+
+class TeamDeleteSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Team
+        fields = ['id', ]
 
 
 class TransferListSerializer(serializers.ModelSerializer):

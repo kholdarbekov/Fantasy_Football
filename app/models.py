@@ -45,7 +45,7 @@ class User(AbstractUser):
 
     username = None
     email = models.EmailField(_('email address'), unique=True)
-    team = models.OneToOneField('Team', on_delete=models.CASCADE, related_name='owner', blank=True, null=True)
+    team = models.OneToOneField('Team', on_delete=models.SET_NULL, related_name='owner', blank=True, null=True)
     role = models.PositiveSmallIntegerField(choices=ROLE_CHOICES, default=ROLE_CHOICES[0][0])
 
     USERNAME_FIELD = 'email'
@@ -58,12 +58,12 @@ class User(AbstractUser):
 
 
 class TeamManager(models.Manager):
-    def generate_team(self, user):
+    def generate_team(self, user=None, name=None, country=None):
         countries = tuple(country_names.keys())
-        num_of_countries = len(countries)
+        num_of_countries = len(countries)-1
         team = self.model(
-            name=generate_name(style='capital'),
-            country=countries[random.randint(0, num_of_countries)],
+            name=(name if name else generate_name(style='capital')),
+            country=(country if country else countries[random.randint(0, num_of_countries)]),
             value=settings.TEAM_TOTAL_PLAYERS * settings.PLAYER_INITIAL_PRICE,
             budget=settings.TEAM_INITIAL_BUDGET
         )
@@ -118,8 +118,11 @@ class TeamManager(models.Manager):
             team.add_player(player, defer_save=True)
 
         team.save()
-        user.team = team
-        user.save()
+        if user:
+            user.team = team
+            user.save()
+
+        return team
 
 
 class Team(models.Model):
@@ -221,16 +224,18 @@ class TransferList(models.Model):
     def make_transfer(self, buying_team):
         selling_team = self.player.team
 
-        if selling_team.id == buying_team.id:
-            raise Exception('Buying team is same with selling team')
+        if selling_team:
+            if selling_team.id == buying_team.id:
+                raise Exception('Buying team is same with selling team')
 
         if buying_team.budget < self.asking_price:
             raise Exception('Buying team does not have enough budget to buy this player!')
         else:
-            selling_team.players.remove(self.player)
-            selling_team.budget += self.asking_price
-            selling_team.recalculate_team_value()
-            selling_team.save()
+            if selling_team:
+                selling_team.players.remove(self.player)
+                selling_team.budget += self.asking_price
+                selling_team.recalculate_team_value()
+                selling_team.save()
 
             self.player.increase_price()
             self.player.save()
@@ -256,6 +261,6 @@ class TransferHistory(models.Model):
         return '{player_fname} {player_lname}: {sell_team} -> {buy_team}'.format(
             player_fname=self.player.first_name,
             player_lname=self.player.last_name,
-            sell_team=self.sell_team.name,
-            buy_team=self.buy_team.name
+            sell_team=self.sell_team,
+            buy_team=self.buy_team
         )
