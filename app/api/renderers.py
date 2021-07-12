@@ -1,5 +1,4 @@
 from rest_framework import renderers
-from rest_framework.status import is_client_error, is_server_error
 
 
 class Renderer(renderers.JSONRenderer):
@@ -35,4 +34,3 @@ class Renderer(renderers.JSONRenderer):
             'error_messages': error_messages
         }
         return super(Renderer, self).render(resp, media_type, renderer_context)
-

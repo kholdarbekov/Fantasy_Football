@@ -5,10 +5,12 @@ from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
+
+from ..documents import PlayerDocument, TransferListDocument
 from ..models import User, Team, Player, TransferList
 from .serializers import UserSerializer, UserRegisterSerializer, UserLoginSerializer, TeamSerializer, \
     TeamUpdateSerializer, PlayerSerializer, TransferListSerializer, TeamDeleteSerializer, PlayerCreateSerializer, \
-    PlayerDeleteSerializer
+    PlayerDeleteSerializer, TeamAddPlayerSerializer
 from .permissions import IsAdminRoleUser
 from .renderers import Renderer
 
@@ -518,8 +520,9 @@ class SetPlayerToTransferList(views.APIView):
             return Response(data=error_message, status=status.HTTP_400_BAD_REQUEST)
 
         transfer_offer, created = TransferList.objects.get_or_create(player=player, asking_price=asking_price)
-        if created and player.team:
-            player.team.set_player_to_transfer_list(player)
+        if created:
+            if player.team:
+                player.team.set_player_to_transfer_list(player)
             return Response(status=status.HTTP_200_OK)
         else:
             error_message.append('This player is already in Transfer List')
@@ -531,9 +534,33 @@ class TransferListView(generics.ListAPIView):
     serializer_class = TransferListSerializer
     permission_classes = [IsAuthenticated, ]
 
+    def get(self, request, *args, **kwargs):
+        error_message = list()
+        try:
+            if request.data:
+                allowed_params = ('asking_price', 'player__country', 'player__name', 'player__team__name')
+                m = map(lambda x: x in request.data, allowed_params)
+                m2 = map(lambda x: x in allowed_params, request.data)
+                if any(m) and all(m2):
+                    return super(TransferListView, self).get(request, *args, **kwargs)
+                else:
+                    error_message.append('wrong param is sent')
+            else:
+                return super(TransferListView, self).get(request, *args, **kwargs)
+        except Exception as e:
+            error_message.extend(e.args)
+
+        return Response(data=error_message, status=status.HTTP_400_BAD_REQUEST)
+
     def get_queryset(self):
-        transfer_list = TransferList.objects.all()
-        return transfer_list
+        transfers = None
+        if self.request.data:
+            # elasticsearch
+            search_result = TransferListDocument.search().filter('match', **self.request.data)
+            transfers = search_result.to_queryset()
+        else:
+            transfers = TransferList.objects.all()
+        return transfers
 
 
 class BuyTransferView(views.APIView):
@@ -572,3 +599,34 @@ class BuyTransferView(views.APIView):
             error_message.append('This player is not on Transfer list')
 
         return Response(data=error_message, status=status.HTTP_400_BAD_REQUEST)
+
+
+class TeamAddPlayerView(generics.UpdateAPIView):
+    serializer_class = TeamAddPlayerSerializer
+    permission_classes = [IsAuthenticated, IsAdminRoleUser, ]
+
+    def update(self, request, *args, **kwargs):
+        try:
+            return super(TeamAddPlayerView, self).update(request, *args, **kwargs)
+        except Exception as e:
+            return Response(data=e.args, status=status.HTTP_400_BAD_REQUEST)
+
+    def get_object(self):
+        error_message = list()
+        team = None
+
+        try:
+            _ = self.request.data['player_id']
+            team_id = self.request.data['team_id']
+            team = Team.objects.get(id=team_id)
+        except KeyError as key:
+            error_message.append('{param} is not sent'.format(param=key))
+        except ObjectDoesNotExist:
+            error_message.append('Team not found')
+        except Exception as e:
+            error_message.extend(e.args)
+
+        if error_message:
+            raise Exception(*error_message)
+
+        return team

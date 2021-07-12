@@ -209,6 +209,10 @@ class Player(models.Model):
     def __str__(self):
         return '[{team}] {first_name} {last_name}'.format(team=self.team.name, first_name=self.first_name, last_name=self.last_name)
 
+    @property
+    def name(self):
+        return '{first_name} {last_name}'.format(first_name=self.first_name, last_name=self.last_name)
+
     def increase_price(self):
         increase_percent = (random.randint(10, 100) + 100) / 100
         self.price = Decimal(increase_percent) * self.price

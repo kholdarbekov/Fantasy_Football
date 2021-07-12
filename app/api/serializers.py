@@ -1,5 +1,6 @@
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth import authenticate
+from django.core.exceptions import ObjectDoesNotExist
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers, fields
 from rest_framework.exceptions import ValidationError
@@ -34,37 +35,19 @@ class UserRegisterSerializer(serializers.ModelSerializer):
             role=User.USER
         )
         return user
-    '''
-    def is_valid(self, raise_exception=False):
-        assert hasattr(self, 'initial_data'), (
-            'Cannot call `.is_valid()` as no `data=` keyword argument was '
-            'passed when instantiating the serializer instance.'
-        )
 
-        if not hasattr(self, '_validated_data'):
-            try:
-                self._validated_data = self.run_validation(self.initial_data)
-            except ValidationError as exc:
-                self._validated_data = {}
-                self._errors = []
-                for arg in exc.args:
-                    for k, error_details in arg.items():
-                        for detail in error_details:
-                            self._errors.append(str(detail))
-            else:
-                self._errors = []
-
-        if self._errors and raise_exception:
-            raise Exception(self._errors)
-
-        return not bool(self._errors)
-    '''
     class Meta:
         model = User
         fields = ['email', 'password', 'first_name', 'last_name']
 
 
 class UserLoginSerializer(serializers.Serializer):
+    def update(self, instance, validated_data):
+        pass
+
+    def create(self, validated_data):
+        pass
+
     email = serializers.CharField(
         label=_("Email"),
         write_only=True
@@ -103,7 +86,7 @@ class UserLoginSerializer(serializers.Serializer):
 
 
 class PlayerSerializer(serializers.ModelSerializer):
-    price = serializers.DecimalField(decimal_places=2, max_digits=12, default=0)
+    price = serializers.DecimalField(decimal_places=2, max_digits=12, default=0, coerce_to_string=False)
 
     class Meta:
         model = Player
@@ -112,7 +95,7 @@ class PlayerSerializer(serializers.ModelSerializer):
 
 class PlayerCreateSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
-    price = serializers.DecimalField(decimal_places=2, max_digits=12, default=0)
+    price = serializers.DecimalField(decimal_places=2, max_digits=12, default=0, coerce_to_string=False)
 
     class Meta:
         model = Player
@@ -127,8 +110,8 @@ class PlayerDeleteSerializer(serializers.ModelSerializer):
 
 
 class TeamSerializer(serializers.ModelSerializer):
-    value = serializers.DecimalField(read_only=True, decimal_places=2, min_value=0, max_digits=12)
-    budget = serializers.DecimalField(read_only=True, decimal_places=2, min_value=0, max_digits=12)
+    value = serializers.DecimalField(read_only=True, decimal_places=2, min_value=0, max_digits=12, coerce_to_string=False)
+    budget = serializers.DecimalField(read_only=True, decimal_places=2, min_value=0, max_digits=12, coerce_to_string=False)
     players = PlayerSerializer(many=True, read_only=True)
 
     class Meta:
@@ -138,8 +121,8 @@ class TeamSerializer(serializers.ModelSerializer):
 
 class TeamUpdateSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
-    value = serializers.DecimalField(read_only=True, decimal_places=2, min_value=0, max_digits=12)
-    budget = serializers.DecimalField(read_only=True, decimal_places=2, min_value=0, max_digits=12)
+    value = serializers.DecimalField(read_only=True, decimal_places=2, min_value=0, max_digits=12, coerce_to_string=False)
+    budget = serializers.DecimalField(read_only=True, decimal_places=2, min_value=0, max_digits=12, coerce_to_string=False)
     owner = serializers.StringRelatedField(many=False, read_only=True)
 
     def create(self, validated_data):
@@ -163,7 +146,53 @@ class TeamDeleteSerializer(serializers.ModelSerializer):
 
 class TransferListSerializer(serializers.ModelSerializer):
     player = PlayerSerializer(many=False, read_only=True)
+    asking_price = serializers.DecimalField(decimal_places=2, min_value=0, max_digits=12, coerce_to_string=False)
 
     class Meta:
         model = TransferList
         fields = ['player', 'asking_price']
+
+
+class TeamAddPlayerSerializer(serializers.Serializer):
+    def create(self, validated_data):
+        pass
+
+    def update(self, instance, validated_data):
+        player = None
+        try:
+            player_id = validated_data['player_id']
+            player = Player.objects.get(id=player_id)
+            if player.team:
+                msg = _('Can not add. Player is already in a team')
+                raise serializers.ValidationError(str(msg))
+            instance.add_player(player)
+        except ObjectDoesNotExist:
+            msg = _('Player not found')
+            raise serializers.ValidationError(str(msg))
+        except Exception as e:
+            msg = _(str(*e.args))
+            raise serializers.ValidationError(str(msg))
+
+        return player
+
+    team_id = serializers.CharField(
+        label=_("Team id"),
+        style={'input_type': 'number'},
+        write_only=True
+    )
+    player_id = serializers.CharField(
+        label=_("Player id"),
+        style={'input_type': 'number'},
+        write_only=True
+    )
+    player = PlayerSerializer(many=False, read_only=True)
+
+    def validate(self, attrs):
+        team_id = attrs.get('team_id')
+        player_id = attrs.get('player_id')
+
+        if not (team_id and player_id):
+            msg = _('Must include "team_id" and "player_id"')
+            raise serializers.ValidationError(str(msg), code='invalid')
+
+        return attrs

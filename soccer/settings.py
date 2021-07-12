@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'app',
     'rest_framework',
     'rest_framework.authtoken',
+    'django_elasticsearch_dsl',
 ]
 
 MIDDLEWARE = [
@@ -141,8 +142,6 @@ TEAM_INITIAL_BUDGET = 5_000_000
 TEAM_TOTAL_PLAYERS = TEAM_GOALKEEPERS + TEAM_MIDFIELDERS + TEAM_DEFENDERS + TEAM_FORWARDS
 
 REST_FRAMEWORK = {
-    # Use Django's standard `django.contrib.auth` permissions,
-    # or allow read-only access for unauthenticated users.
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
         'rest_framework.authentication.SessionAuthentication'
@@ -157,3 +156,8 @@ REST_FRAMEWORK = {
     ]
 }
 
+ELASTICSEARCH_DSL = {
+    'default': {
+        'hosts': 'localhost:9200',
+    },
+}

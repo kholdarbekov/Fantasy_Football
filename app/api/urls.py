@@ -1,7 +1,7 @@
 from django.urls import path, re_path
 from .views import UsersListView, UserRegisterView, UserLoginView, LogoutView, TeamDetailView, TeamUpdateView, \
     PlayerUpdateView, SetPlayerToTransferList, TransferListView, BuyTransferView, UserUpdateView, UserDeleteView, \
-    TeamListView, TeamCreateView, TeamDeleteView, PlayerCreateView, PlayerListView, PlayerDelete
+    TeamListView, TeamCreateView, TeamDeleteView, PlayerCreateView, PlayerListView, PlayerDelete, TeamAddPlayerView
 
 urlpatterns = [
     path('user/register', UserRegisterView.as_view(), name='user_register'),
@@ -13,6 +13,7 @@ urlpatterns = [
     path('team/update', TeamUpdateView.as_view(), name='team_update'),
     path('team/delete', TeamDeleteView.as_view(), name='team_delete'),  # only for admin
     path('team/details', TeamDetailView.as_view(), name='team_details'),
+    path('team/add-player', TeamAddPlayerView.as_view(), name='team_add_player'),  # only for admin
 
     path('player/create', PlayerCreateView.as_view(), name='player_create'),  # only for admin
     path('player/list', PlayerListView.as_view(), name='player_list'),  # only for admin
