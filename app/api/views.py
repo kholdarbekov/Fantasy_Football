@@ -5,6 +5,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from elasticsearch_dsl.query import MultiMatch, Match
 
 from ..documents import PlayerDocument, TransferListDocument
 from ..models import User, Team, Player, TransferList
@@ -57,8 +58,8 @@ class UserRegisterView(generics.CreateAPIView):
             headers = self.get_success_headers(serializer.data)
             user = serializer.instance
             token, created = Token.objects.get_or_create(user=user)
-            Team.objects.generate_team(user)
-            return Response({'token': token.key}, status=status.HTTP_201_CREATED, headers=headers)
+            team = Team.objects.generate_team(user)
+            return Response({'token': token.key, 'type': 'user', 'team_id': team.id}, status=status.HTTP_201_CREATED, headers=headers)
         except Exception as e:
             return Response(data=e.args, status=status.HTTP_400_BAD_REQUEST)
 
@@ -153,7 +154,15 @@ class UserLoginView(ObtainAuthToken):
         if error_message:
             return Response(data=error_message, status=status.HTTP_400_BAD_REQUEST)
 
-        return super(UserLoginView, self).post(request, *args, **kwargs)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data['user']
+        token, created = Token.objects.get_or_create(user=user)
+        user_type = 'admin' if user.role == User.ADMIN else 'user'
+        team_id = None
+        if user.team:
+            team_id = user.team.id
+        return Response({'token': token.key, 'type': user_type, 'team_id': team_id})
 
 
 class LogoutView(views.APIView):
@@ -509,6 +518,7 @@ class SetPlayerToTransferList(views.APIView):
                         error_message.append('Player not found in your team')
                 else:
                     error_message.append('User has no teem')
+
         except KeyError as key:
             error_message.append('{param} is not sent'.format(param=key))
         except ObjectDoesNotExist:
@@ -519,13 +529,11 @@ class SetPlayerToTransferList(views.APIView):
         if error_message:
             return Response(data=error_message, status=status.HTTP_400_BAD_REQUEST)
 
-        transfer_offer, created = TransferList.objects.get_or_create(player=player, asking_price=asking_price)
-        if created:
-            if player.team:
-                player.team.set_player_to_transfer_list(player)
+        try:
+            player.set_to_transfer_list(asking_price=asking_price)
             return Response(status=status.HTTP_200_OK)
-        else:
-            error_message.append('This player is already in Transfer List')
+        except Exception as e:
+            error_message.extend(e.args)
 
         return Response(data=error_message, status=status.HTTP_400_BAD_REQUEST)
 
@@ -556,8 +564,12 @@ class TransferListView(generics.ListAPIView):
         transfers = None
         if self.request.data:
             # elasticsearch
-            search_result = TransferListDocument.search().filter('match', **self.request.data)
-            transfers = search_result.to_queryset()
+            s = TransferListDocument.search()
+            for key, value in self.request.data.items():
+                s = s.query("match", **{key: value})
+            # search_result = TransferListDocument.search().filter('match', **self.request.data)
+            # transfers = search_result.to_queryset()
+            transfers = s.to_queryset()
         else:
             transfers = TransferList.objects.all()
         return transfers

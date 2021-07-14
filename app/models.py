@@ -171,23 +171,14 @@ class Team(models.Model):
         if not defer_save:
             self.save()
 
-    def recalculate_team_value(self):
+    def recalculate_team_value(self, defer_save=False):
         total_value = 0
         for player in self.players.all():
             total_value += player.price
         self.value = total_value
 
-    def set_player_to_transfer_list(self, player):
-        if player.category == 'GK':
-            self.gk_count -= 1
-        elif player.category == 'DEF':
-            self.def_count -= 1
-        elif player.category == 'MID':
-            self.mid_count -= 1
-        elif player.category == 'FWD':
-            self.fwd_count -= 1
-
-        self.save()
+        if not defer_save:
+            self.save()
 
 
 class Player(models.Model):
@@ -217,6 +208,21 @@ class Player(models.Model):
         increase_percent = (random.randint(10, 100) + 100) / 100
         self.price = Decimal(increase_percent) * self.price
 
+    def set_to_transfer_list(self, asking_price):
+        transfer_offer, created = TransferList.objects.get_or_create(player=self, asking_price=asking_price)
+        if created and self.team:
+            if self.category == 'GK':
+                self.team.gk_count -= 1
+            elif self.category == 'DEF':
+                self.team.def_count -= 1
+            elif self.category == 'MID':
+                self.team.mid_count -= 1
+            elif self.category == 'FWD':
+                self.team.fwd_count -= 1
+            self.team.save()
+        else:
+            raise Exception('This player is already in Transfer List')
+
 
 class TransferList(models.Model):
     player = models.OneToOneField('Player', related_name='transfer_offer', on_delete=models.CASCADE)
@@ -238,13 +244,13 @@ class TransferList(models.Model):
             if selling_team:
                 selling_team.players.remove(self.player)
                 selling_team.budget += self.asking_price
-                selling_team.recalculate_team_value()
+                selling_team.recalculate_team_value(defer_save=True)
                 selling_team.save()
 
             self.player.increase_price()
             self.player.save()
             buying_team.add_player(self.player, defer_save=True)
-            buying_team.recalculate_team_value()
+            buying_team.recalculate_team_value(defer_save=True)
             buying_team.budget -= self.asking_price
             buying_team.save()
 

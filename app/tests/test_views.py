@@ -22,7 +22,7 @@ class UserTest(APITestCase):
         api_client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
 
     def test_login(self):
-        # unit test
+        # e2e test
         response = api_client.post(reverse('user_login'), data={'email': 'admin@mail.ru', 'password': 'password1234567'})
 
         user = User.objects.get(email='admin@mail.ru')
@@ -31,7 +31,7 @@ class UserTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_register(self):
-        # unit test
+        # e2e test
         response = api_client.post(reverse('user_register'),
                                    data={'email': 'test5@mail.ru',
                                          'password': 'password1234567',
@@ -44,15 +44,15 @@ class UserTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_update(self):
-        # unit test
+        # e2e test
         pass
 
     def test_delete(self):
-        # unit test
+        # e2e test
         pass
 
     def test_get_all_users(self):
-        # unit test
+        # e2e test
         response = api_client.get(reverse('users_list'))
         users = User.objects.filter(role=User.USER)
         serializer = UserSerializer(users, many=True)

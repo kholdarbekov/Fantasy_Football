@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
 from pathlib import Path
+from urllib.parse import quote_plus as urlquote
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -156,8 +157,16 @@ REST_FRAMEWORK = {
     ]
 }
 
+elk_base_url = 'elasticsearch://{user_name}:{password}@{host_ip}:{host_port}'
+elastic_search_url = elk_base_url.format(user_name='elastic',
+                                         password=urlquote('w0zYvDL7eng0dRoFBl7R'),
+                                         # password may contain special characters
+                                         host_ip='localhost',
+                                         host_port=9200)
 ELASTICSEARCH_DSL = {
     'default': {
-        'hosts': 'localhost:9200',
+        'hosts': [elastic_search_url]
     },
 }
+
+# Documentation: https://documenter.getpostman.com/view/2726228/Tzm9iDyj
