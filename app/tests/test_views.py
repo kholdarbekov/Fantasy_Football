@@ -3,7 +3,7 @@ from rest_framework import status
 from django.urls import reverse
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase, APIClient
-from ..models import User, Team, Player
+from ..models import User, Team, Player, TransferList
 from ..api.serializers import UserSerializer
 
 
@@ -187,3 +187,50 @@ class PlayerTest(APITestCase):
             _ = Player.objects.get(id=self.t1.id)
 
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+
+class TransferTest(APITestCase):
+    def setUp(self):
+        u = User.objects.create_superuser(email='admin@mail.ru', password='password1234567')
+        token, created = Token.objects.get_or_create(user=u)
+        api_client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
+
+        self.u1 = User.objects.create_user(email='test1@mail.ru', password='password1234567')
+        self.t1 = Team.objects.generate_team(self.u1)
+        self.p1 = Player(category='FWD', first_name='fname', last_name='lname', country='UZ', age=18, price=1000000)
+        self.p1.save()
+
+    def test_combination(self):
+        def test_set(self):
+            # e2e test
+            response = api_client.post(reverse('set_player_to_transfer_list'),
+                                       data={"player_id": self.t1.players.last().id,
+                                             "asking_price": 1200000})
+
+            _ = api_client.post(reverse('set_player_to_transfer_list'),
+                                data={"player_id": self.p1.id,
+                                      "asking_price": 1300000})
+
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        def test_list(self):
+            # e2e test
+            response = api_client.get(reverse('transfer_list'))
+
+            self.assertIsNotNone(response.data)
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        def test_buy(self):
+            # e2e test
+
+            u = User.objects.get(email='test1@mail.ru')
+            token, created = Token.objects.get_or_create(user=u)
+            api_client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
+
+            response = api_client.post(reverse('transfer_buy'), data={"player_id": self.p1.id})
+
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        test_set(self)
+        test_list(self)
+        test_buy(self)

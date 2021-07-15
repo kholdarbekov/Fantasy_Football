@@ -50,4 +50,17 @@ class TeamTest(TestCase):
 
 
 class PlayerTest(TestCase):
-    pass
+    """ Test module for Player model """
+
+    def setUp(self):
+        self.p1 = Player(category='FWD', first_name='fname', last_name='lname', country='UZ', age=18, price=1000000)
+
+    def test_name(self):
+        # unit test
+        self.assertEqual(self.p1.name, 'fname lname')
+
+    def test_increase_price(self):
+        # unit test
+        old_price = self.p1.price
+        self.p1.increase_price()
+        self.assertGreater(self.p1.price, old_price)

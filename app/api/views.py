@@ -255,6 +255,7 @@ class TeamUpdateView(generics.UpdateAPIView):
                 if isinstance(country, str):
                     # TODO: comment below if you run test
                     self.request.data['country'] = country.upper()
+
                 if self.request.data['country'] not in country_names.keys():
                     error_message.append('"{country}" is not a valid choice'.format(country=self.request.data['country']))
             else:
@@ -288,6 +289,7 @@ class TeamCreateView(generics.CreateAPIView):
                 if isinstance(country, str):
                     # TODO: comment below if you run test
                     self.request.data['country'] = country.upper()
+
                 if self.request.data['country'] not in country_names.keys():
                     error_message.append('"{country}" is not a valid choice'.format(country=self.request.data['country']))
             else:

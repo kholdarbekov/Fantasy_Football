@@ -175,7 +175,7 @@ REST_FRAMEWORK = {
 
 elk_base_url = 'elasticsearch://{user_name}:{password}@{host_ip}:{host_port}'
 elastic_search_url = elk_base_url.format(user_name='elastic',
-                                         password=urlquote('w0zYvDL7eng0dRoFBl7R'),
+                                         password=urlquote('6PjUc8BTe5E9Hg1bwEp2'),
                                          # password may contain special characters
                                          host_ip='localhost',
                                          host_port=9200)
