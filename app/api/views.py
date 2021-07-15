@@ -253,6 +253,7 @@ class TeamUpdateView(generics.UpdateAPIView):
             country = self.request.data['country']
             if country:
                 if isinstance(country, str):
+                    # TODO: comment below if you run test
                     self.request.data['country'] = country.upper()
                 if self.request.data['country'] not in country_names.keys():
                     error_message.append('"{country}" is not a valid choice'.format(country=self.request.data['country']))
@@ -285,6 +286,7 @@ class TeamCreateView(generics.CreateAPIView):
                 error_message.append('name may not be blank')
             if country:
                 if isinstance(country, str):
+                    # TODO: comment below if you run test
                     self.request.data['country'] = country.upper()
                 if self.request.data['country'] not in country_names.keys():
                     error_message.append('"{country}" is not a valid choice'.format(country=self.request.data['country']))
@@ -349,8 +351,8 @@ class PlayerCreateView(generics.CreateAPIView):
             first_name = request.data['first_name']
             last_name = request.data['last_name']
             country = request.data['country']
-            age = request.data['age']
-            price = request.data['price']
+            age = int(request.data['age'])
+            price = float(request.data['price'])
             category = request.data['category']
 
             if isinstance(first_name, str):
@@ -366,6 +368,7 @@ class PlayerCreateView(generics.CreateAPIView):
                 error_message.append('last_name should be string')
 
             if isinstance(country, str):
+                # TODO: comment below if you run test
                 self.request.data['country'] = country.upper()
                 if self.request.data['country'] not in country_names.keys():
                     error_message.append('"{country}" is not a valid choice'.format(country=self.request.data['country']))
@@ -385,6 +388,7 @@ class PlayerCreateView(generics.CreateAPIView):
                 error_message.append('price must be number')
 
             if isinstance(category, str):
+                # TODO: comment below if you run test
                 self.request.data['category'] = category.upper()
                 if self.request.data['category'] not in ('GK', 'DEF', 'MID', 'FWD'):
                     error_message.append('"{category}" is not a valid choice. Options are [GK, DEF, MID, FWD]'.format(
@@ -449,8 +453,8 @@ class PlayerUpdateView(generics.UpdateAPIView):
         try:
             player_id = self.request.data['id']
             player = Player.objects.get(id=player_id)
-            age = self.request.data['age']
-            price = self.request.data['price']
+            age = int(self.request.data['age'])
+            price = float(self.request.data['price'])
             category = self.request.data['category']
 
             if isinstance(age, int):
@@ -466,7 +470,9 @@ class PlayerUpdateView(generics.UpdateAPIView):
                 error_message.append('price must be number')
 
             if isinstance(category, str):
+                # TODO: comment below if you run test
                 self.request.data['category'] = category.upper()
+
                 if self.request.data['category'] not in ('GK', 'DEF', 'MID', 'FWD'):
                     error_message.append('"{category}" is not a valid choice. Options are [GK, DEF, MID, FWD]'.format(
                         category=self.request.data['category']))
