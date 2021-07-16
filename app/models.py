@@ -210,18 +210,27 @@ class Player(models.Model):
 
     def set_to_transfer_list(self, asking_price):
         transfer_offer, created = TransferList.objects.get_or_create(player=self, asking_price=asking_price)
-        if created and self.team:
-            if self.category == 'GK':
-                self.team.gk_count -= 1
-            elif self.category == 'DEF':
-                self.team.def_count -= 1
-            elif self.category == 'MID':
-                self.team.mid_count -= 1
-            elif self.category == 'FWD':
-                self.team.fwd_count -= 1
-            self.team.save()
+        if created:
+            if self.team:
+                if self.category == 'GK':
+                    self.team.gk_count -= 1
+                elif self.category == 'DEF':
+                    self.team.def_count -= 1
+                elif self.category == 'MID':
+                    self.team.mid_count -= 1
+                elif self.category == 'FWD':
+                    self.team.fwd_count -= 1
+                self.team.save()
         else:
             raise Exception('This player is already in Transfer List')
+
+    def delete(self, using=None, keep_parents=False):
+        if self.team:
+            self.team.value -= self.price
+            cnt = self.team.__getattribute__('{category}_count'.format(category=self.category.lower()))
+            self.team.__setattr__('{category}_count'.format(category=self.category.lower()), cnt - 1)
+            self.team.save()
+        return super(Player, self).delete(using, keep_parents)
 
 
 class TransferList(models.Model):

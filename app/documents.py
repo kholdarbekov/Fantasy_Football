@@ -2,7 +2,7 @@ from django_elasticsearch_dsl import Document, fields
 from django_elasticsearch_dsl.registries import registry
 from .models import Player, Team, TransferList
 
-
+'''
 @registry.register_document
 class PlayerDocument(Document):
     team = fields.ObjectField(properties={
@@ -54,7 +54,7 @@ class PlayerDocument(Document):
         """
         if isinstance(related_instance, Team):
             return related_instance.players.all()
-
+'''
 
 @registry.register_document
 class TransferListDocument(Document):

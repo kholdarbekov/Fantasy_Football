@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from elasticsearch_dsl.query import MultiMatch, Match
 
-from ..documents import PlayerDocument, TransferListDocument
+from ..documents import TransferListDocument
 from ..models import User, Team, Player, TransferList
 from .serializers import UserSerializer, UserRegisterSerializer, UserLoginSerializer, TeamSerializer, \
     TeamUpdateSerializer, PlayerSerializer, TransferListSerializer, TeamDeleteSerializer, PlayerCreateSerializer, \
