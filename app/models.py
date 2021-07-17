@@ -1,5 +1,7 @@
 import random
 from decimal import Decimal
+
+from django.core.validators import MinValueValidator
 from pytz import country_names
 import names
 from names_generator import generate_name
@@ -128,7 +130,7 @@ class TeamManager(models.Manager):
 class Team(models.Model):
     name = models.CharField(max_length=128, blank=False, null=False)
     country = models.CharField(max_length=128, choices=country_names.items())
-    value = models.DecimalField(max_digits=12, decimal_places=2)
+    value = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(Decimal('0'))])
     budget = models.DecimalField(max_digits=12, decimal_places=2, default=0)
 
     gk_count = models.PositiveSmallIntegerField(default=0)
@@ -193,7 +195,7 @@ class Player(models.Model):
     last_name = models.CharField(_('last name'), max_length=128, blank=True)
     country = models.CharField(max_length=128, choices=country_names.items())
     age = models.PositiveSmallIntegerField()
-    price = models.DecimalField(max_digits=10, decimal_places=2)
+    price = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal('0'))])
 
     team = models.ForeignKey('Team', on_delete=models.CASCADE, related_name='players', blank=True, null=True)
 
@@ -235,7 +237,7 @@ class Player(models.Model):
 
 class TransferList(models.Model):
     player = models.OneToOneField('Player', related_name='transfer_offer', on_delete=models.CASCADE)
-    asking_price = models.DecimalField(max_digits=10, decimal_places=2)
+    asking_price = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal('0'))])
 
     def __str__(self):
         return '{player} {price}'.format(player=self.player, price=self.asking_price)
@@ -271,7 +273,7 @@ class TransferList(models.Model):
 
 class TransferHistory(models.Model):
     player = models.ForeignKey('Player', related_name='transfer_history', on_delete=models.CASCADE)
-    sell_price = models.DecimalField(max_digits=10, decimal_places=2)
+    sell_price = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal('0'))])
     sell_team = models.ForeignKey('Team', related_name='transfer_sells_history', on_delete=models.SET_NULL, blank=True, null=True)
     buy_team = models.ForeignKey('Team', related_name='transfer_buys_history', on_delete=models.SET_NULL, blank=True, null=True)
     time = models.DateTimeField(auto_now_add=True)

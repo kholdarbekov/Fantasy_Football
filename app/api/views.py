@@ -515,6 +515,12 @@ class SetPlayerToTransferList(views.APIView):
             player_id = request.data['player_id']
             asking_price = request.data['asking_price']
 
+            if isinstance(asking_price, (float, int)):
+                if asking_price <= 0:
+                    error_message.append('asking_price should be bigger than 0')
+            else:
+                error_message.append('asking_price must be number')
+
             player = Player.objects.get(id=player_id)
             if request.user.role == User.USER:
                 self_team = request.user.team
