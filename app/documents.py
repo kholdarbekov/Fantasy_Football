@@ -56,6 +56,7 @@ class PlayerDocument(Document):
             return related_instance.players.all()
 '''
 
+
 @registry.register_document
 class TransferListDocument(Document):
     player = fields.ObjectField(properties={
@@ -63,6 +64,8 @@ class TransferListDocument(Document):
         # 'last_name': fields.TextField(),
         'name': fields.TextField(attr='name'),
         'country': fields.TextField(),
+        'age': fields.IntegerField(),
+        'category': fields.TextField(),
         'team': fields.ObjectField(properties={
                 'name': fields.TextField(),
                 'country': fields.TextField(),

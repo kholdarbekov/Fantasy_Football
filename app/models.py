@@ -58,6 +58,11 @@ class User(AbstractUser):
     def __str__(self):
         return self.email
 
+    def delete(self, using=None, keep_parents=False):
+        if self.team:
+            self.team.delete(using, keep_parents)
+        return super(User, self).delete(using, keep_parents)
+
 
 class TeamManager(models.Manager):
     def generate_team(self, user=None, name=None, country=None):
@@ -144,6 +149,9 @@ class Team(models.Model):
         return '[{country}] {name}'.format(country=self.country, name=self.name)
 
     def add_player(self, player, defer_save=False):
+        '''
+        Uncomment this if you wish to apply validations upon adding player to team
+
         if self.gk_count + self.def_count + self.mid_count + self.fwd_count >= settings.TEAM_TOTAL_PLAYERS:
             raise Exception(f'Team can\'t have more than {settings.TEAM_TOTAL_PLAYERS} players!')
 
@@ -158,6 +166,7 @@ class Team(models.Model):
 
         if player.category == 'FWD' and self.fwd_count >= settings.TEAM_FORWARDS:
             raise Exception(f'Team can\'t have more than {settings.TEAM_FORWARDS} forwards!')
+        '''
 
         self.players.add(player)
 
@@ -169,6 +178,25 @@ class Team(models.Model):
             self.mid_count += 1
         elif player.category == 'FWD':
             self.fwd_count += 1
+
+        if not defer_save:
+            self.save()
+
+    def remove_player(self, player, defer_save=False):
+
+        if player in self.players.all():
+            self.players.remove(player)
+
+            if player.category == 'GK':
+                self.gk_count -= 1
+            elif player.category == 'DEF':
+                self.def_count -= 1
+            elif player.category == 'MID':
+                self.mid_count -= 1
+            elif player.category == 'FWD':
+                self.fwd_count -= 1
+        else:
+            raise Exception('Player not found in Team')
 
         if not defer_save:
             self.save()
@@ -212,18 +240,7 @@ class Player(models.Model):
 
     def set_to_transfer_list(self, asking_price):
         transfer_offer, created = TransferList.objects.get_or_create(player=self, asking_price=asking_price)
-        if created:
-            if self.team:
-                if self.category == 'GK':
-                    self.team.gk_count -= 1
-                elif self.category == 'DEF':
-                    self.team.def_count -= 1
-                elif self.category == 'MID':
-                    self.team.mid_count -= 1
-                elif self.category == 'FWD':
-                    self.team.fwd_count -= 1
-                self.team.save()
-        else:
+        if not created:
             raise Exception('This player is already in Transfer List')
 
     def delete(self, using=None, keep_parents=False):
@@ -231,7 +248,7 @@ class Player(models.Model):
             self.team.value -= self.price
             cnt = self.team.__getattribute__('{category}_count'.format(category=self.category.lower()))
             self.team.__setattr__('{category}_count'.format(category=self.category.lower()), cnt - 1)
-            self.team.save()
+            self.team.recalculate_team_value(defer_save=False)
         return super(Player, self).delete(using, keep_parents)
 
 
@@ -253,7 +270,7 @@ class TransferList(models.Model):
             raise Exception('Buying team does not have enough budget to buy this player!')
         else:
             if selling_team:
-                selling_team.players.remove(self.player)
+                selling_team.remove_player(self.player, defer_save=True)
                 selling_team.budget += self.asking_price
                 selling_team.recalculate_team_value(defer_save=True)
                 selling_team.save()

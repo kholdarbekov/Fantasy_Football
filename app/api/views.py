@@ -5,7 +5,6 @@ from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from elasticsearch_dsl.query import MultiMatch, Match
 
 from ..documents import TransferListDocument
 from ..models import User, Team, Player, TransferList
@@ -503,6 +502,7 @@ class PlayerUpdateView(generics.UpdateAPIView):
 
 
 class SetPlayerToTransferList(views.APIView):
+
     permission_classes = [IsAuthenticated, ]
     http_method_names = ['post', ]
 
@@ -514,7 +514,7 @@ class SetPlayerToTransferList(views.APIView):
         try:
             player_id = request.data['player_id']
             asking_price = request.data['asking_price']
-
+            
             if isinstance(asking_price, (float, int)):
                 if asking_price <= 0:
                     error_message.append('asking_price should be bigger than 0')
@@ -560,7 +560,9 @@ class TransferListView(generics.ListAPIView):
         error_message = list()
         try:
             if request.data:
-                allowed_params = ('asking_price', 'player__country', 'player__name', 'player__team__name')
+                allowed_params = (
+                    'asking_price', 'player__country', 'player__name', 'player__team__name', 'player__age',
+                    'player__category')
                 m = map(lambda x: x in request.data, allowed_params)
                 m2 = map(lambda x: x in allowed_params, request.data)
                 if any(m) and all(m2):

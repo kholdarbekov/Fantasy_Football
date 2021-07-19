@@ -1,6 +1,9 @@
+from decimal import Decimal
+
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth import authenticate
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.validators import MinValueValidator
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers, fields
 from rest_framework.exceptions import ValidationError
@@ -86,7 +89,7 @@ class UserLoginSerializer(serializers.Serializer):
 
 
 class PlayerSerializer(serializers.ModelSerializer):
-    price = serializers.DecimalField(decimal_places=2, max_digits=12, default=0, coerce_to_string=False)
+    price = serializers.DecimalField(decimal_places=2, max_digits=12, default=0, coerce_to_string=False, validators=[MinValueValidator(Decimal('0'))])
 
     class Meta:
         model = Player
@@ -95,7 +98,7 @@ class PlayerSerializer(serializers.ModelSerializer):
 
 class PlayerCreateSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
-    price = serializers.DecimalField(decimal_places=2, max_digits=12, default=0, coerce_to_string=False)
+    price = serializers.DecimalField(decimal_places=2, max_digits=12, default=0, coerce_to_string=False, validators=[MinValueValidator(Decimal('0'))])
 
     class Meta:
         model = Player
@@ -110,8 +113,8 @@ class PlayerDeleteSerializer(serializers.ModelSerializer):
 
 
 class TeamSerializer(serializers.ModelSerializer):
-    value = serializers.DecimalField(read_only=True, decimal_places=2, min_value=0, max_digits=12, coerce_to_string=False)
-    budget = serializers.DecimalField(read_only=True, decimal_places=2, min_value=0, max_digits=12, coerce_to_string=False)
+    value = serializers.DecimalField(read_only=True, decimal_places=2, min_value=0, max_digits=12, coerce_to_string=False, validators=[MinValueValidator(Decimal('0'))])
+    budget = serializers.DecimalField(read_only=True, decimal_places=2, min_value=0, max_digits=12, coerce_to_string=False, validators=[MinValueValidator(Decimal('0'))])
     players = PlayerSerializer(many=True, read_only=True)
 
     class Meta:
@@ -121,8 +124,8 @@ class TeamSerializer(serializers.ModelSerializer):
 
 class TeamUpdateSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
-    value = serializers.DecimalField(read_only=True, decimal_places=2, min_value=0, max_digits=12, coerce_to_string=False)
-    budget = serializers.DecimalField(read_only=True, decimal_places=2, min_value=0, max_digits=12, coerce_to_string=False)
+    value = serializers.DecimalField(decimal_places=2, min_value=0, max_digits=12, coerce_to_string=False, validators=[MinValueValidator(Decimal('0'))])
+    budget = serializers.DecimalField(decimal_places=2, min_value=0, max_digits=12, coerce_to_string=False, validators=[MinValueValidator(Decimal('0'))])
     owner = serializers.StringRelatedField(many=False, read_only=True)
 
     def create(self, validated_data):
@@ -146,7 +149,7 @@ class TeamDeleteSerializer(serializers.ModelSerializer):
 
 class TransferListSerializer(serializers.ModelSerializer):
     player = PlayerSerializer(many=False, read_only=True)
-    asking_price = serializers.DecimalField(decimal_places=2, min_value=0, max_digits=12, coerce_to_string=False)
+    asking_price = serializers.DecimalField(decimal_places=2, min_value=0, max_digits=12, coerce_to_string=False, validators=[MinValueValidator(Decimal('0'))])
 
     class Meta:
         model = TransferList
