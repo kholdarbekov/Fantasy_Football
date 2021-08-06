@@ -17,7 +17,7 @@ from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 
 def get_secret(setting):
@@ -33,12 +33,12 @@ def get_secret(setting):
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '2*+cf3-p93@572xtlyovps8k^n+ckob&2kw&no!r_)^(6jmo$@'
+SECRET_KEY = get_secret('DJANGO_SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1', '0.0.0.0']
 
 
 # Application definition
@@ -94,11 +94,11 @@ WSGI_APPLICATION = 'soccer.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'soccer_db',
-        'USER': 'soccer_db_usr',
-        'PASSWORD': 'soccer_db_usr_12345',
-        'HOST': 'localhost',
-        'PORT': '',
+        'NAME': get_secret('DATABASE_NAME'),
+        'USER': get_secret('DATABASE_USER'),
+        'PASSWORD': get_secret('DATABASE_PASSWORD'),
+        'HOST': 'db',
+        'PORT': '5432',
     }
 }
 
@@ -139,7 +139,14 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
+STATICFILES_DIRS = [
+    BASE_DIR / 'assets',
+]
 STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'static'
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
@@ -160,8 +167,7 @@ TEAM_TOTAL_PLAYERS = TEAM_GOALKEEPERS + TEAM_MIDFIELDERS + TEAM_DEFENDERS + TEAM
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',
-        'rest_framework.authentication.SessionAuthentication'
+        'rest_framework.authentication.TokenAuthentication'
     ],
 
     'DEFAULT_PERMISSION_CLASSES': [
@@ -181,7 +187,7 @@ elastic_search_url = elk_base_url.format(user_name='elastic',
                                          host_port=9200)
 ELASTICSEARCH_DSL = {
     'default': {
-        'hosts': [elastic_search_url]
+        'hosts': 'es:9200'
     },
 }
 

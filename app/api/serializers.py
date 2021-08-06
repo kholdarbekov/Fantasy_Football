@@ -91,6 +91,13 @@ class UserLoginSerializer(serializers.Serializer):
 class PlayerSerializer(serializers.ModelSerializer):
     price = serializers.DecimalField(decimal_places=2, max_digits=12, default=0, coerce_to_string=False, validators=[MinValueValidator(Decimal('0'))])
 
+    def update(self, instance, validated_data):
+        instance = super(PlayerSerializer, self).update(instance, validated_data)
+        if instance.team:
+            instance.team.recalculate_team_value(defer_save=False)
+
+        return instance
+
     class Meta:
         model = Player
         fields = ['id', 'first_name', 'last_name', 'age', 'price', 'country', 'category']

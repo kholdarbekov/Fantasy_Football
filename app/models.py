@@ -248,7 +248,7 @@ class Player(models.Model):
             self.team.value -= self.price
             cnt = self.team.__getattribute__('{category}_count'.format(category=self.category.lower()))
             self.team.__setattr__('{category}_count'.format(category=self.category.lower()), cnt - 1)
-            self.team.recalculate_team_value(defer_save=False)
+            self.team.save()
         return super(Player, self).delete(using, keep_parents)
 
 

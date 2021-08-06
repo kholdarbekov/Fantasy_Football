@@ -1,0 +1,58 @@
+version: "3.9"
+
+services:
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+    volumes:
+      - ./config/nginx/conf.d:/etc/nginx/conf.d
+      - static_volume:/home/soccer/static
+      - media_volume:/home/soccer/media
+    depends_on:
+      - gunicorn
+
+  gunicorn:
+    build:
+      context: .
+      args:
+        PIP_REQUIREMENTS: "${PIP_REQUIREMENTS}"
+    command: bash -c "/home/soccer/venv/bin/gunicorn --workers 3 --bind 0.0.0.0:8000 soccer.wsgi:application"
+    depends_on:
+      - db
+      - es
+    volumes:
+      - static_volume:/home/soccer/static
+      - media_volume:/home/soccer/media
+    expose:
+      - "8000"
+    environment:
+      DJANGO_SETTINGS_MODULE: "${DJANGO_SETTINGS_MODULE}"
+      DJANGO_SECRET_KEY: "${DJANGO_SECRET_KEY}"
+      DATABASE_NAME: "${DATABASE_NAME}"
+      DATABASE_USER: "${DATABASE_USER}"
+      DATABASE_PASSWORD: "${DATABASE_PASSWORD}"
+
+  db:
+    image: postgres:latest
+    restart: always
+    environment:
+      POSTGRES_DB: "${DATABASE_NAME}"
+      POSTGRES_USER: "${DATABASE_USER}"
+      POSTGRES_PASSWORD: "${DATABASE_PASSWORD}"
+    ports:
+      - 5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+
+  es:
+    image: elasticsearch:7.14.0
+    environment:
+      - discovery.type=single-node
+    ports:
+      - "9200:9200"
+
+volumes:
+  postgres_data:
+  static_volume:
+  media_volume:
