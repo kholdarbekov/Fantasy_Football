@@ -15,6 +15,8 @@ from pathlib import Path
 from urllib.parse import quote_plus as urlquote
 from django.core.exceptions import ImproperlyConfigured
 
+from auth_extra.password_validation import MaximumLengthValidator
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -109,15 +111,21 @@ DATABASES = {
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        "OPTIONS": {"max_similarity": 0.5},
     },
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        "OPTIONS": {"min_length": 8},
     },
     {
         'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
     },
     {
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
+    {
+        "NAME": "auth_extra.password_validation.MaximumLengthValidator",
+        "OPTIONS": {"max_length": 32},
     },
 ]
 
