@@ -6,6 +6,8 @@ from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
+import structlog
+
 from ..documents import TransferListDocument
 from ..models import User, Team, Player, TransferList
 from .serializers import UserSerializer, UserRegisterSerializer, UserLoginSerializer, TeamSerializer, \
@@ -13,6 +15,8 @@ from .serializers import UserSerializer, UserRegisterSerializer, UserLoginSerial
     PlayerDeleteSerializer, TeamAddPlayerSerializer
 from .permissions import IsAdminRoleUser
 from .renderers import Renderer
+
+logger = structlog.get_logger("django_structlog")
 
 
 class UsersListView(generics.ListAPIView):
@@ -226,6 +230,7 @@ class TeamUpdateView(generics.UpdateAPIView):
 
     def update(self, request, *args, **kwargs):
         try:
+            logger.info("team_update", message="Team is being updated")
             return super(TeamUpdateView, self).update(request, *args, **kwargs)
         except Exception as e:
             return Response(data=e.args, status=status.HTTP_400_BAD_REQUEST)
