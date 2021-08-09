@@ -19,7 +19,7 @@ DATABASE=$(echo "from django.conf import settings; print(settings.DATABASES['def
 echo "=== Creating DB Backup ===" > ${LOG_FILE}
 date >> ${LOG_FILE}
 echo "- Dump database" >> ${LOG_FILE}
-pg_dump --format=p --file="${DAILY_BACKUP_PATH}" "${DATABASE}"
+pg_dump --format=p --file=${DAILY_BACKUP_PATH} ${DATABASE}
 function_exit_code=$?
 if [[ $function_exit_code -ne 0 ]]; then
    {

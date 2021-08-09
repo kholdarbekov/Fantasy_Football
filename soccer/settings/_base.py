@@ -157,12 +157,12 @@ LOGGING = {
         },
         "json_file": {
             "class": "logging.handlers.WatchedFileHandler",
-            "filename": os.path.join(BASE_DIR, "tmp", "json.log"),
+            "filename": os.path.join(BASE_DIR, "logs", "json.log"),
             "formatter": "json_formatter",
         },
         "flat_line_file": {
             "class": "logging.handlers.WatchedFileHandler",
-            "filename": os.path.join(BASE_DIR, "tmp", "flat_line.log"),
+            "filename": os.path.join(BASE_DIR, "logs", "flat_line.log"),
             "formatter": "key_value",
         },
     },

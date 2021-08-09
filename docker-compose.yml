@@ -24,6 +24,7 @@ services:
     volumes:
       - static_volume:/home/soccer/static
       - media_volume:/home/soccer/media
+      - ./logs:/home/soccer/logs
     expose:
       - "8000"
     environment:
