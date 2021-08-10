@@ -2,5 +2,5 @@ MAILTO=""
 HOME=/home/soccer
 PATH=/home/soccer/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
 SHELL=/bin/bash
-00 01 * * * /home/soccer/commands/clear_sessions.sh
-00 02 * * * /home/soccer/commands/backup_postgresql_db.sh
+00 01 * * 0 /home/soccer/commands/clear_sessions.sh
+00 02 * * 0 /home/soccer/commands/backup_postgresql_db.sh

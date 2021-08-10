@@ -15,11 +15,13 @@ mkdir -p db_backups
 source venv/bin/activate
 cd ${REPOSITORY_PATH} || exit
 DATABASE=$(echo "from django.conf import settings; print(settings.DATABASES['default']['NAME'])" | python manage.py shell -i python)
+DBUSER=$(echo "from django.conf import settings; print(settings.DATABASES['default']['USER'])" | python manage.py shell -i python)
 
 echo "=== Creating DB Backup ===" > ${LOG_FILE}
 date >> ${LOG_FILE}
 echo "- Dump database" >> ${LOG_FILE}
-pg_dump --format=p --file=${DAILY_BACKUP_PATH} ${DATABASE}
+#pg_dump --format=p --file=${DAILY_BACKUP_PATH} ${DATABASE}
+pg_dump -h db -p 5432 -d ${DATABASE} -U ${DBUSER} --format=p --file=${DAILY_BACKUP_PATH}
 function_exit_code=$?
 if [[ $function_exit_code -ne 0 ]]; then
    {

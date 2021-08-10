@@ -17,7 +17,11 @@ services:
       context: .
       args:
         PIP_REQUIREMENTS: "${PIP_REQUIREMENTS}"
+        DATABASE_NAME: "${DATABASE_NAME}"
+        DATABASE_USER: "${DATABASE_USER}"
+        DATABASE_PASSWORD: "${DATABASE_PASSWORD}"
     command: bash -c "/home/soccer/venv/bin/gunicorn --workers 3 --bind 0.0.0.0:8000 soccer.wsgi:application"
+    container_name: fantasy_soccer
     depends_on:
       - db
       - es
