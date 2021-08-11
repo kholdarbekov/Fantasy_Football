@@ -132,6 +132,15 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# Unless your site should be available over both SSL and non-SSL connections,
+# you may want to either set this setting True
+# or configure a load balancer or reverse-proxy server to redirect all connections to HTTPS.
+SECURE_SSL_REDIRECT = True
+# Using a secure-only session cookie makes it more difficult for network traffic sniffers to hijack user sessions
+SESSION_COOKIE_SECURE = True
+# √Using a secure-only CSRF cookie makes it more difficult for network traffic sniffers to steal the CSRF token
+CSRF_COOKIE_SECURE = True
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
